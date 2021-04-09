@@ -5,54 +5,88 @@
       <h2 class="my-5" v-show="step === 1">Confirm Registration</h2>
       <div class="col-sm-5 mx-auto">
         <form @submit.prevent="submitHandler" novalidate>
+
           <transition name="slide-fade">
             <div class="step" v-show="step === 0">
+
               <h3 class="text-center">Required</h3>
 
               <div class="form-group mb-2">
                 <label for="fullName">Full Name</label>
                 <input
                   class="form-control"
+                  :class="{'is-invalid': v$.form.fullName.$error}"
                   type="text"
                   name="fullName"
                   id="fullName"
                   v-model="form.fullName"
-                  autocomplete="none"
+                  autocomplete="off"
+                  @blur="v$.form.fullName.$touch"
                 />
+                <div
+                  v-if="v$.form.fullName.$invalid"
+                  class="invalid-feedback"
+                >
+                  {{v$.form.fullName.$silentErrors[0].$message}}
+                </div>
               </div>
 
               <div class="form-group mb-2">
                 <label for="nickname">Nickname</label>
                 <input
                   class="form-control"
+                  :class="{'is-invalid': v$.form.nickname.$error}"
                   type="text"
                   name="nickname"
                   id="nickname"
                   v-model="form.nickname"
-                  autocomplete="none"
+                  autocomplete="off"
+                  @blur="v$.form.nickname.$touch"
                 />
+                <div
+                  v-if="v$.form.nickname.$invalid"
+                  class="invalid-feedback"
+                >
+                  {{v$.form.nickname.$silentErrors[0].$message}}
+                </div>
               </div>
 
               <div class="form-group mb-2">
                 <label for="password">Password</label>
                 <input
                   class="form-control"
+                  :class="{'is-invalid': v$.form.password.$error}"
                   type="password"
                   name="password"
                   id="password"
                   v-model="form.password"
+                  @blur="v$.form.password.$touch"
                 />
+                <div
+                  v-if="v$.form.password.$invalid"
+                  class="invalid-feedback"
+                >
+                  {{v$.form.password.$silentErrors[0].$message}}
+                </div>
               </div>
 
               <div class="form-group mb-2">
                 <label for="repeatPassword">Repeat Password</label>
                 <input
                   class="form-control"
+                  :class="{'is-invalid': v$.form.repeatPassword.$error}"
                   type="password"
                   name="repeatPassword"
                   id="repeatPassword"
                   v-model="form.repeatPassword"
+                  @blur="v$.form.repeatPassword.$touch"
                 />
+                <div
+                  v-if="v$.form.repeatPassword.$invalid"
+                  class="invalid-feedback"
+                >
+                  {{v$.form.repeatPassword.$silentErrors[0].$message}}
+                </div>
               </div>
 
               <div class="form-group mb-2">
@@ -61,16 +95,20 @@
                   <span class="input-group-text" id="basic-addon1">+998</span>
                   <input
                     class="form-control"
+                    :class="{'is-invalid': v$.form.phone.$error}"
                     type="tel"
                     v-model="form.phone"
                     name="phone"
                     id="phone"
-                    placeholder="(55) 555-5555"
-                    autocomplete="tel"
-                    maxlength="14"
-                    pattern="[(][0-9]{3}[)] [0-9]{3}-[0-9]{4}"
-                    required
+                    autocomplete="off"
+                    @blur="v$.form.phone.$touch"
                   />
+                  <div
+                    v-if="v$.form.phone.$invalid"
+                    class="invalid-feedback"
+                  >
+                    {{v$.form.phone.$silentErrors[0].$message}}
+                  </div>
                 </div>
               </div>
 
@@ -121,6 +159,7 @@
                 @click="nextStep"
                 type="button"
                 class="btn btn-primary mb-4"
+                :disabled="nextStepDisabled"
               >
                 Next step
               </button>
@@ -164,9 +203,31 @@
 </template>
 
 <script>
+import { useVuelidate } from '@vuelidate/core';
+import {
+  required,
+  helpers,
+  minLength,
+  sameAs,
+} from '@vuelidate/validators';
+
 export default {
   name: 'register',
   components: {},
+  computed: {
+    nextStepDisabled() {
+      return this.v$.form.fullName.$invalid
+              || this.v$.form.nickname.$invalid
+              || this.v$.form.password.$invalid
+              || this.v$.form.repeatPassword.$invalid
+              || this.v$.form.phone.$invalid;
+    },
+  },
+  setup() {
+    return {
+      v$: useVuelidate(),
+    };
+  },
   data() {
     return {
       step: 0,
@@ -183,9 +244,52 @@ export default {
       },
     };
   },
+  validations() {
+    return {
+      form: {
+        fullName: {
+          required: helpers.withMessage('This field cannot be empty', required),
+        },
+        nickname: {
+          required: helpers.withMessage('This field cannot be empty', required),
+          minLength: minLength(5),
+          nicknameValidation: helpers.withMessage('Only Latin letters and ("-", "_", ".") are allowed', (nickname) => {
+            const regex = /^[0-9a-zA-Z]+[-._]*[0-9a-zA-Z]+$/;
+            return (
+              regex.test(nickname)
+            );
+          }),
+        },
+        password: {
+          required: helpers.withMessage('This field cannot be empty', required),
+          minLength: minLength(8),
+          passwordValidation: helpers.withMessage('Only Latin letters and ("-", "_", ".", "+", "=", "@", "$", "!", "?") are allowed', (password) => {
+            const regex = /[0-9a-zA-Z!?$@=+-._]{8,}/;
+            return (
+              regex.test(password)
+            );
+          }),
+        },
+        repeatPassword: {
+          required: helpers.withMessage('This field cannot be empty', required),
+          sameAs: sameAs(this.form.password),
+        },
+        phone: {
+          required: helpers.withMessage('This field cannot be empty', required),
+          phoneValidation: helpers.withMessage('Please provide a correct phone number', (phone) => {
+            const regex = /^[0-9]{9,}/;
+            return (
+              regex.test(phone)
+            );
+          }),
+        },
+      },
+    };
+  },
   methods: {
     submitHandler() {
       console.log('submitted');
+      this.$router.push('/');
     },
     nextStep() {
       this.step = 1;
