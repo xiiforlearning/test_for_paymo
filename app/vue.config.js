@@ -1,3 +1,3 @@
 module.exports = {
-  publicPath: '/test_for_paymo/'
-}
+  publicPath: '/test_for_paymo/',
+};
