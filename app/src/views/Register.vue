@@ -220,6 +220,7 @@ import {
   sameAs,
 } from '@vuelidate/validators';
 import axios from 'axios';
+import { mapMutations } from 'vuex';
 
 export default {
   name: 'register',
@@ -310,6 +311,7 @@ export default {
     };
   },
   methods: {
+    ...mapMutations(['createUser']),
     async nextStep() {
       const options = {
         headers: {
@@ -346,7 +348,7 @@ export default {
       };
       await axios.post(`http://test.ok.paymo.uz/public/user/confirm-registration/${registrationId}`, JSON.stringify(data), options)
         .then((response) => {
-          console.log(response);
+          this.createUser(response.data);
           this.$router.push('/');
         })
         .catch((error) => {

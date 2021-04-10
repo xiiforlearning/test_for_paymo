@@ -24,7 +24,7 @@ export default {
 
   .home-page {
     height: 100vh;
-    background-image: url();
+    background-image: url(../assets/homePage-bg.jpg);
     background-repeat: no-repeat;
     background-attachment: fixed;
     background-position: center;
@@ -41,6 +41,8 @@ export default {
     background: inherit;
     border-radius: 1rem;
     overflow: hidden;
+    transform-style: preserve-3d;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, .3);
   }
 
   .blurred-box:after{
@@ -81,7 +83,7 @@ export default {
     position: absolute;
     bottom: 30px;
     left: calc(50% - 100px);
-    color: #fff;
+    color: rgb(44, 44, 44);
     font-size: 14px;
   }
 
