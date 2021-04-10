@@ -24,7 +24,7 @@ export default {
 
   .home-page {
     height: 100vh;
-    background-image: url(../assets/homePage-bg.jpg);
+    background-image: url();
     background-repeat: no-repeat;
     background-attachment: fixed;
     background-position: center;

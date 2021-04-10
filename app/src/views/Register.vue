@@ -92,7 +92,7 @@
               <div class="form-group mb-2">
                 <label for="phone">Phone</label>
                 <div class="input-group">
-                  <span class="input-group-text" id="basic-addon1">+998</span>
+                  <span class="input-group-text" id="basic-addon1">+</span>
                   <input
                     class="form-control"
                     :class="{'is-invalid': v$.form.phone.$error}"
@@ -168,17 +168,25 @@
 
           <transition name="slide-fade">
             <div class="step" v-show="step === 1">
-              <div class="confirm-code"></div>
+              <h3 class="text-center">CONFIRM CODE IS: <span>654321</span></h3>
               <div class="form-group mb-2">
-                <label for="code">Code</label>
+                <label for="confrimCode">Code:</label>
                 <input
                   class="form-control"
+                  :class="{'is-invalid': v$.confirmCode.$error}"
                   type="text"
-                  name="code"
-                  id="code"
-                  v-model="form.confirmCode"
+                  name="confrimCode"
+                  id="confrimCode"
+                  v-model="confirmCode"
                   autocomplete="none"
+                  @blur="v$.confirmCode.$touch"
                 />
+                <div
+                  v-if="v$.confirmCode.$invalid"
+                  class="invalid-feedback"
+                >
+                  {{v$.confirmCode.$silentErrors[0].$message}}
+                </div>
               </div>
               <button
                 @click="previousStep"
@@ -189,6 +197,7 @@
               </button>
               <button
                 @click="confirmRegistration"
+                :disabled="confirmStepDisabled"
                 type="submit"
                 class="btn btn-primary"
               >
@@ -210,6 +219,7 @@ import {
   minLength,
   sameAs,
 } from '@vuelidate/validators';
+import axios from 'axios';
 
 export default {
   name: 'register',
@@ -221,6 +231,9 @@ export default {
               || this.v$.form.password.$invalid
               || this.v$.form.repeatPassword.$invalid
               || this.v$.form.phone.$invalid;
+    },
+    confirmStepDisabled() {
+      return this.v$.confirmCode.$invalid;
     },
   },
   setup() {
@@ -240,8 +253,8 @@ export default {
         gender: '',
         country: '',
         city: '',
-        confirmCode: '',
       },
+      confirmCode: '',
     };
   },
   validations() {
@@ -254,7 +267,7 @@ export default {
           required: helpers.withMessage('This field cannot be empty', required),
           minLength: minLength(5),
           nicknameValidation: helpers.withMessage('Only Latin letters and ("-", "_", ".") are allowed', (nickname) => {
-            const regex = /^[0-9a-zA-Z]+[-._]*[0-9a-zA-Z]+$/;
+            const regex = /^([A-z-_.\d])*$/; // eslint-disable-line
             return (
               regex.test(nickname)
             );
@@ -264,7 +277,7 @@ export default {
           required: helpers.withMessage('This field cannot be empty', required),
           minLength: minLength(8),
           passwordValidation: helpers.withMessage('Only Latin letters and ("-", "_", ".", "+", "=", "@", "$", "!", "?") are allowed', (password) => {
-            const regex = /[0-9a-zA-Z!?$@=+-._]{8,}/;
+            const regex = /^([A-z-_.+=@$!?\d])*$/;
             return (
               regex.test(password)
             );
@@ -277,25 +290,70 @@ export default {
         phone: {
           required: helpers.withMessage('This field cannot be empty', required),
           phoneValidation: helpers.withMessage('Please provide a correct phone number', (phone) => {
-            const regex = /^[0-9]{9,}/;
+            const regex = /^(?=998)[0-9]{12}$/;
             return (
               regex.test(phone)
             );
           }),
         },
       },
+      confirmCode: {
+        required: helpers.withMessage('This field cannot be empty', required),
+        minLength: minLength(6),
+        codeValidation: helpers.withMessage('Please write a correct confirmation code', (code) => {
+          const regex = /654321/;
+          return (
+            regex.test(code)
+          );
+        }),
+      },
     };
   },
   methods: {
-    submitHandler() {
-      console.log('submitted');
-      this.$router.push('/');
-    },
-    nextStep() {
-      this.step = 1;
+    async nextStep() {
+      const options = {
+        headers: {
+          "Accept": "application/json", // eslint-disable-line
+          "Content-Type": "application/json", // eslint-disable-line
+          "Access-Control-Allow-Origin": "*", // eslint-disable-line
+        },
+      };
+      await axios.post('http://test.ok.paymo.uz/public/user/register', JSON.stringify(this.form), options)
+        .then((response) => {
+          localStorage.setItem('registrationId', response.data.registrationId);
+          this.step = 1;
+        })
+        .catch((error) => {
+          if (error.response) {
+            console.log(error.response.data);
+          }
+        });
     },
     previousStep() {
       this.step = 0;
+    },
+    async submitHandler() {
+      const registrationId = localStorage.getItem('registrationId');
+      const data = {
+        otp: 654321,
+      };
+      const options = {
+        headers: {
+          "Accept": "application/json", // eslint-disable-line
+          "Content-Type": "application/json", // eslint-disable-line
+          "Access-Control-Allow-Origin": "*", // eslint-disable-line
+        },
+      };
+      await axios.post(`http://test.ok.paymo.uz/public/user/confirm-registration/${registrationId}`, JSON.stringify(data), options)
+        .then((response) => {
+          console.log(response);
+          this.$router.push('/');
+        })
+        .catch((error) => {
+          if (error.response) {
+            console.log(error.response.data);
+          }
+        });
     },
   },
 };
@@ -314,5 +372,8 @@ export default {
   .slide-fade-leave-to {
     transform: translateX(20px);
     opacity: 0;
+  }
+  .text-center span {
+    color: red;
   }
 </style>
